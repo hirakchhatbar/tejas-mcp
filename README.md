@@ -18,7 +18,7 @@ npm install -g tejas-mcp
 npx tejas-mcp
 ```
 
-For Cursor (or any MCP client), use the local or global server.
+For Cursor (or any MCP client), use the local or global server. If you run `npx tejas-mcp` in a terminal, it will start and wait for a client (e.g. Cursor) to connect over stdio — that’s expected; press Ctrl+C to stop.
 
 ## Configuration
 

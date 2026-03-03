@@ -10,6 +10,10 @@ async function main() {
     await import("./serve-tejas.js");
     return;
   }
+  // Stderr only — stdout is used for MCP JSON-RPC
+  process.stderr.write(
+    "Tejas MCP server running (stdio). Connect your IDE MCP client (e.g. Cursor). Press Ctrl+C to exit.\n"
+  );
   const transport = new StdioServerTransport();
   await runServer(transport);
 }
