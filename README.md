@@ -53,6 +53,26 @@ If you installed globally:
 
 Use the same stdio transport: run `npx tejas-mcp` or `tejas-mcp` as the MCP server command with no arguments. The server communicates via stdin/stdout using the Model Context Protocol.
 
+### HTTP transport (Streamable HTTP)
+
+You can run the server over HTTP so clients connect by URL instead of a subprocess:
+
+```bash
+npx tejas-mcp --http
+# or after install: npm run serve
+```
+
+By default the server listens on `http://127.0.0.1:3333/mcp`. Configure with:
+
+- `MCP_HTTP_PORT` — port (default: `3333`)
+- `MCP_HTTP_HOST` — host (default: `127.0.0.1`)
+
+For Cursor or other MCP clients that support URL-based servers, use:
+
+- **URL:** `http://localhost:3333/mcp` (or your host/port)
+
+The HTTP endpoint is stateless: each request gets a new session. Use POST for JSON-RPC; GET returns 405.
+
 ## Development
 
 ```bash
