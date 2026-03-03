@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { runServer } from "./server.js";
+
+async function main() {
+  const transport = new StdioServerTransport();
+  await runServer(transport);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

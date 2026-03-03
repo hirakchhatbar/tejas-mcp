@@ -1,0 +1,27 @@
+{
+  "name": "tejas-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for the Tejas (te.js) framework — exposes docs, examples, and code generation tools for IDE AI assistants",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "tejas-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-docs.cjs",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.5",
+    "typescript": "^5.4.0"
+  }
+}
