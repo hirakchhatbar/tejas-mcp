@@ -23,7 +23,7 @@ const patternSchema = z.enum(PATTERNS);
 export function registerGetCodeExample(server: McpServer): void {
   server.tool(
     "get_code_example",
-    "Returns a complete, runnable code example for a Tejas pattern.",
+    "Returns a complete, runnable code example for a Tejas (te.js) pattern.",
     { pattern: patternSchema },
     async ({ pattern }) => {
       const { getCodeExample } = await import("./get-code-example-handler.js");

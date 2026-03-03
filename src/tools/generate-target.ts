@@ -10,7 +10,7 @@ const endpointSchema = z.object({
 export function registerGenerateTarget(server: McpServer): void {
   server.tool(
     "generate_target",
-    "Generates a .target.js file based on name, basePath, endpoints, and options.",
+    "Generates a Tejas (te.js) .target.js file based on name, basePath, endpoints, and options.",
     {
       name: z.string().describe("Target name, e.g. 'users'"),
       basePath: z.string().describe("Base route path, e.g. '/users'"),

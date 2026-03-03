@@ -4,7 +4,7 @@ import { z } from "zod";
 export function registerGenerateAppEntry(server: McpServer): void {
   server.tool(
     "generate_app_entry",
-    "Generates the main application entry file with configurable features.",
+    "Generates the main Tejas (te.js) application entry file with configurable features.",
     {
       port: z.number().optional(),
       withRateLimit: z.boolean().optional().default(false),

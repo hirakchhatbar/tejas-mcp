@@ -13,7 +13,7 @@ const FEATURES = [
 export function registerScaffoldProject(server: McpServer): void {
   server.tool(
     "scaffold_project",
-    "Generates a complete Tejas project structure with all files.",
+    "Generates a complete Tejas (te.js) project structure with all files.",
     {
       name: z.string().describe("Project name"),
       features: z

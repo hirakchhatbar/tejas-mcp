@@ -27,7 +27,7 @@ const aiConfigSchema = z
 export function registerGenerateConfig(server: McpServer): void {
   server.tool(
     "generate_config",
-    "Generates a tejas.config.json file with the specified options.",
+    "Generates a tejas.config.json file for Tejas (te.js) with the specified options.",
     {
       port: z.number().optional(),
       logHttpRequests: z.boolean().optional(),
