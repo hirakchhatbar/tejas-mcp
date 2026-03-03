@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc && node scripts/copy-docs.cjs",
     "prepare": "npm run build",
-    "serve": "node dist/serve-http.js",
+    "serve": "node dist/serve-tejas.js",
     "start": "node dist/index.js"
   },
   "engines": {
@@ -20,10 +20,10 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "te.js": "^2.0.3",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
     "@types/node": "^20.12.5",
     "typescript": "^5.4.0"
   }

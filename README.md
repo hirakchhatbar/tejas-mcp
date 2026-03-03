@@ -55,17 +55,16 @@ Use the same stdio transport: run `npx tejas-mcp` or `tejas-mcp` as the MCP serv
 
 ### HTTP transport (Streamable HTTP)
 
-You can run the server over HTTP so clients connect by URL instead of a subprocess:
+The HTTP server runs on **te.js** (same framework the MCP documents). Run it with:
 
 ```bash
 npx tejas-mcp --http
 # or after install: npm run serve
 ```
 
-By default the server listens on `http://127.0.0.1:3333/mcp`. Configure with:
+By default it listens on `http://0.0.0.0:3333/mcp`. Configure with:
 
 - `MCP_HTTP_PORT` — port (default: `3333`)
-- `MCP_HTTP_HOST` — host (default: `127.0.0.1`)
 
 For Cursor or other MCP clients that support URL-based servers, use:
 
@@ -84,6 +83,14 @@ node dist/index.js
 ```
 
 The server runs over stdio; an MCP client (e.g. Cursor) will start it as a subprocess and exchange JSON-RPC messages.
+
+To develop against a local clone of **te.js** (e.g. in a sibling directory), use npm link:
+
+```bash
+cd /path/to/te.js && npm link
+cd /path/to/tejas-mcp && npm link te.js
+npm run build
+```
 
 ## Documentation topics
 

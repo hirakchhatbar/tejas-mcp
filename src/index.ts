@@ -7,7 +7,7 @@ const useHttp = process.argv.includes("--http");
 
 async function main() {
   if (useHttp) {
-    await import("./serve-http.js");
+    await import("./serve-tejas.js");
     return;
   }
   const transport = new StdioServerTransport();
