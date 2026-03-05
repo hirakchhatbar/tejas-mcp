@@ -1,6 +1,6 @@
 {
   "name": "tejas-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for the Tejas (te.js) framework — exposes docs, examples, and code generation tools for IDE AI assistants",
   "type": "module",
   "main": "dist/index.js",
