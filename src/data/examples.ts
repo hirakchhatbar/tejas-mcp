@@ -210,28 +210,35 @@ const Model = conn.model('Item', new conn.Schema({ name: String }));
 // Use Model.find(), Model.create(), etc.
 `,
 
-  "error-handling": `// Zero-config: throw TejError for HTTP errors; Tejas handles the rest
+  "error-handling": `// Zero-config: Tejas catches all errors. When errors.llm.enabled, ammo.throw() with no args — LLM infers from code context.
 import { Target, TejError } from 'te.js';
 
 const target = new Target('/api');
 
+// Explicit: status and message (always override)
 target.register('/fail', (ammo) => {
   throw new TejError(400, 'Bad request');
 });
+target.register('/notfound', (ammo) => ammo.notFound());
+target.register('/server-error', (ammo) => ammo.throw(500, 'Internal error'));
 
-target.register('/notfound', (ammo) => {
-  ammo.notFound();
+// When errors.llm.enabled: no args — LLM infers from code surrounding the call (no error object required)
+target.register('/users/:id', async (ammo) => {
+  const user = await findUser(ammo.payload.id);
+  if (!user) return ammo.throw();
+  ammo.fire(user);
 });
 
-target.register('/server-error', (ammo) => {
-  ammo.throw(500, 'Internal error');
-});
-
-// Async: rejections are caught and turned into 500
-target.register('/async', async (ammo) => {
-  const data = await fetchSomething();
-  if (!data) throw new TejError(404, 'Not found');
-  ammo.fire(data);
+// Optional: pass caught error; LLM uses error stack for code context. Per-call options: useLlm, messageType
+target.register('/risky', async (ammo) => {
+  try {
+    const data = await riskyOp();
+    ammo.fire(data);
+  } catch (err) {
+    return ammo.throw(err);
+    // ammo.throw(err, { useLlm: false });
+    // ammo.throw(err, { messageType: 'developer' });
+  }
 });
 
 export default target;

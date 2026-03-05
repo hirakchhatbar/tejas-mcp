@@ -106,6 +106,30 @@ app.withRateLimit({
 
 **Returns:** `Tejas` (for chaining)
 
+#### withCORS(config)
+
+Add CORS middleware. Sets `Access-Control-*` headers on responses; OPTIONS preflight requests receive 204 with CORS headers and do not run the rest of the chain.
+
+```javascript
+app.withCORS({
+  origin: ['https://example.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `origin` | string \| string[] \| function | `'*'` | Allowed origin(s): `'*'`, array of origins, or `(origin) => boolean` |
+| `methods` | string[] | `['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS']` | Allowed methods for `Access-Control-Allow-Methods` |
+| `allowedHeaders` | string[] | `['Content-Type','Authorization']` | Allowed request headers for `Access-Control-Allow-Headers` |
+| `credentials` | boolean | `false` | Set `Access-Control-Allow-Credentials: true` |
+| `maxAge` | number | — | Preflight cache max age in seconds (`Access-Control-Max-Age`) |
+
+**Returns:** `Tejas` (for chaining)
+
 #### serveDocs(config)
 
 Serve an interactive API documentation UI (Scalar) from a pre-generated OpenAPI spec.

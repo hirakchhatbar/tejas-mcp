@@ -1,6 +1,6 @@
 # Error Handling
 
-Tejas provides robust error handling to keep your application running even when unexpected errors occur.
+Tejas keeps your application from crashing on unhandled errors. You don't log the error and send the response separately — **`ammo.throw()` is the single mechanism**: it sends the appropriate HTTP response (logging is optional via `log.exceptions`). Whether you call `ammo.throw()` or the framework calls it when it catches an error, the same behaviour applies. When LLM-inferred errors are enabled, call `ammo.throw()` with no arguments and an LLM infers status and message from code context; explicit code and message always override.
 
 ## Zero-Config Error Handling
 
@@ -45,7 +45,7 @@ app.get('/users/:id', async (req, res) => {
 
 ### Automatic Error Responses
 
-When an unhandled error occurs, Tejas automatically sends a `500 Internal Server Error` response. For intentional errors using `TejError`, the appropriate status code is used.
+When an unhandled error occurs, Tejas automatically sends a `500 Internal Server Error` response. For intentional errors using `TejError` or `ammo.throw()` with explicit code/message, the appropriate status code is used. When [LLM-inferred errors](#llm-inferred-errors) are enabled and you call `ammo.throw()` with no args, the LLM infers from code context.
 
 ### Enable Error Logging
 
@@ -62,6 +62,32 @@ const app = new Tejas({
 Or via environment variable:
 ```bash
 LOG_EXCEPTIONS=true
+```
+
+---
+
+## LLM-Inferred Errors
+
+When **`errors.llm.enabled`** is true and you call `ammo.throw()` without an explicit status code or message, Tejas uses an LLM to infer status and message from **code context** — the source code surrounding the call (with line numbers) and all upstream (callers) and downstream (code that would run next) context. You do not pass an error object; the LLM infers from control flow and intent.
+
+- **No error object required:** Call `ammo.throw()` with no arguments (or only options). The framework captures the code around the call site and upstream stack and sends it to the LLM.
+- **Opt-in:** Enable via config: `errors.llm.enabled: true` and configure `errors.llm` (baseURL, apiKey, model), or call **`app.withLLMErrors()`** / **`app.withLLMErrors({ baseURL, apiKey, model, messageType })`** before `takeoff()`. See [Configuration](./configuration.md).
+- **Framework-caught errors:** When the framework catches an unhandled error, it uses the same `ammo.throw(err)` — so the same `errors.llm` config applies. No separate "log then send response"; one mechanism handles everything.
+- **Message type:** Set `errors.llm.messageType` to `"endUser"` (default) or `"developer"` for end-user-friendly vs developer-friendly messages. Override per call (see Per-call overrides below).
+- **Override:** Whenever you pass a status code or message (e.g. `ammo.throw(404, 'User not found')`), that value is used; the LLM is not called.
+- **Non-production:** In non-production, the LLM can also provide developer insight (e.g. bug vs environment, suggested fix), attached to the response as `_dev` or in logs only — never in production.
+
+### Per-call overrides
+
+For any LLM-eligible `ammo.throw()` call, pass an options object as the last argument:
+
+- **`useLlm`** (boolean): Set to `false` to skip the LLM for this call (default 500). Set to `true` to use the LLM (default when eligible).
+- **`messageType`** (`"endUser"` | `"developer"`): Override the configured default for this call only.
+
+```javascript
+ammo.throw({ useLlm: false });
+ammo.throw({ messageType: 'developer' });
+ammo.throw(caughtErr, { useLlm: false });
 ```
 
 ---
@@ -116,20 +142,23 @@ ammo.unauthorized();
 
 ## Using ammo.throw()
 
-For more control, use `ammo.throw()`:
+For more control, use `ammo.throw()`. When **errors.llm.enabled**, call with **no arguments** and the LLM infers from code context (surrounding + upstream/downstream); you do not pass an error object. Explicit code/message always override.
 
 ```javascript
-// Just status code (uses default message)
+// When errors.llm.enabled: no args — LLM infers from code context
+ammo.throw();
+
+// Optional: pass caught error; LLM uses error stack for code context
+ammo.throw(caughtErr);
+
+// Explicit: status code and/or message (always override)
 ammo.throw(404);
-
-// Status code with message
 ammo.throw(404, 'User not found');
-
-// Error object
-ammo.throw(new Error('Something went wrong'));
-
-// TejError
 ammo.throw(new TejError(400, 'Bad request'));
+
+// Per-call options
+ammo.throw({ useLlm: false });
+ammo.throw({ messageType: 'developer' });
 ```
 
 ## Error Handling in Routes
@@ -381,7 +410,8 @@ When any error occurs in your handler or middleware, this is what happens intern
 2. If `LOG_EXCEPTIONS` is enabled, the error is logged
 3. The error is passed to `ammo.throw()`:
    - **TejError** — uses the error's `code` and `message` directly
-   - **Standard Error** — returns 500 with the error message
+   - **When errors.llm.enabled** and no explicit code/message — LLM infers from code context (surrounding + upstream/downstream); optional error passed as secondary signal
+   - **Standard Error** (no LLM) — returns 500 with the error message
    - **Anything else** — returns 500 with a string representation
 4. `ammo.throw()` calls `ammo.fire(statusCode, message)` to send the HTTP response
 

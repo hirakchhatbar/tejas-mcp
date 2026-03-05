@@ -22,12 +22,12 @@ target.register('/example', (ammo) => {
 Boolean flags for quick method checking:
 
 ```javascript
-ammo.GET      // true if GET request
+ammo.GET      // true if GET or HEAD request (HEAD is handled like GET; body stripped by Node)
 ammo.POST     // true if POST request
 ammo.PUT      // true if PUT request
 ammo.DELETE   // true if DELETE request
 ammo.PATCH    // true if PATCH request
-ammo.HEAD     // true if HEAD request
+ammo.HEAD     // true if HEAD request only
 ammo.OPTIONS  // true if OPTIONS request
 ```
 
@@ -41,7 +41,7 @@ target.register('/resource', (ammo) => {
   if (ammo.POST) {
     return ammo.fire(201, { created: true });
   }
-  ammo.notAllowed();
+  ammo.notAllowed('GET', 'POST');  // 405 + Allow header
 });
 ```
 
@@ -138,33 +138,35 @@ After `fire()` is called, the sent data is available as `ammo.dispatchedData`.
 
 ### throw() — Send Error Response
 
-For intentional error responses:
+For intentional error responses. When **errors.llm.enabled**, call `ammo.throw()` with **no arguments** and an LLM infers status and message from the code surrounding the call (with line numbers) and upstream/downstream context — no error object required. Optional per-call options: `{ useLlm, messageType }`. Explicit code/message always override.
 
 ```javascript
-// Send 500 Internal Server Error
+// When errors.llm.enabled: no args — LLM infers from code context
 ammo.throw();
 
-// Send specific error code
+// Optional: pass caught error; LLM uses error stack for code context
+ammo.throw(caughtErr);
+
+// Explicit: status code and/or message
 ammo.throw(404);
 ammo.throw(404, 'User not found');
+ammo.throw(new TejError(400, 'Bad request'));
 
-// Throw from Error object
-ammo.throw(new Error('Something went wrong'));
-
-// Throw TejError
-import { TejError } from 'te.js';
-throw new TejError(400, 'Invalid input');
+// Per-call options
+ammo.throw({ useLlm: false });
+ammo.throw({ messageType: 'developer' });
 ```
 
 **All `throw()` signatures:**
 
 | Call | Status | Message |
 |------|--------|---------|
-| `throw()` | 500 | `"Internal Server Error"` |
+| `throw()` | 500 or LLM-inferred | Default or LLM-derived from **code context** (see [Error Handling](./error-handling.md#llm-inferred-errors)) |
 | `throw(404)` | 404 | Default message for that status code |
 | `throw(404, "msg")` | 404 | `"msg"` |
 | `throw(new TejError(code, msg))` | `code` | `msg` |
-| `throw(new Error("msg"))` | 500 | `"msg"` (or parses numeric messages as status codes) |
+| `throw(error)` (optional) | LLM-inferred | LLM-derived from code context (error stack used for call site) |
+| `throw({ useLlm, messageType })` | — | Per-call override (skip LLM or message type) |
 
 > **Note:** You don't need try-catch blocks in your handlers! Tejas automatically catches all errors and converts them to appropriate HTTP responses. Use `throw()` or `TejError` only for intentional, expected error conditions. See [Error Handling](./error-handling.md) for details.
 
@@ -181,12 +183,15 @@ ammo.redirect('/new-location', 301);
 ammo.redirect('https://example.com');
 ```
 
-### Convenience Error Methods
+### Method guards and convenience errors
 
 ```javascript
-ammo.notFound();     // Throws 404 Not Found
-ammo.notAllowed();   // Throws 405 Method Not Allowed
-ammo.unauthorized(); // Throws 401 Unauthorized
+ammo.only('GET');              // Restrict to GET; 405 + Allow header if method not GET
+ammo.only('GET', 'POST');      // Restrict to GET or POST
+ammo.notFound();               // Throws 404 Not Found
+ammo.notAllowed();             // Throws 405 Method Not Allowed
+ammo.notAllowed('GET', 'POST'); // 405 + sets Allow: GET, POST
+ammo.unauthorized();           // Throws 401 Unauthorized
 ```
 
 ## Working with Headers

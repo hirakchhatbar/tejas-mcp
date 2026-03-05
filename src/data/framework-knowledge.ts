@@ -8,7 +8,8 @@ export const frameworkKnowledge = `
 ## Identity
 - Tejas is the **AI-native Node.js framework**. It uses AI internally to make the framework smarter (LLM-powered auto-docs, future: intelligent errors, semantic routing, AI alerting/monitoring). It is NOT a wrapper for LLM API calls; the framework itself is AI-powered.
 - Shipped AI: LLM-powered auto-documentation (\`tejas generate:docs\`), MCP server for IDE assistants.
-- Roadmap AI: intelligent error analysis, semantic routing, natural language config, smart validation, AI-driven alerting/monitoring/analytics, anomaly detection, auto-remediation.
+- Shipped AI: LLM-inferred errors — \`ammo.throw()\` with no args; LLM infers status/message from code context (surrounding + upstream/downstream). Enable via config \`errors.llm.enabled\` or \`app.withLLMErrors(config?)\` before takeoff. Config: \`errors.llm.messageType\` (\`"endUser"\` | \`"developer"\`), per-call \`{ useLlm, messageType }\`.
+- Roadmap AI: semantic routing, natural language config, smart validation, AI-driven alerting/monitoring/analytics, anomaly detection, auto-remediation.
 - AI provider: \`app.withAI({ provider, apiKey, features })\` — opt-in, pluggable (OpenAI, Anthropic, Ollama), privacy-safe.
 
 ## Core Concepts (aviation-themed)
@@ -28,6 +29,7 @@ export const frameworkKnowledge = `
 - \`app.takeoff(options)\` — start server; options: \`{ withRedis, withMongo }\`.
 - \`app.withRateLimit(options)\` — rate limiting.
 - \`app.withRedis(config)\` / \`app.withMongo(config)\` — DB connections.
+- \`app.withLLMErrors(config?)\` — enable LLM-inferred errors; optional \`{ baseURL, apiKey, model, messageType }\`. Call before takeoff.
 - \`app.serveDocs(options)\` — Scalar UI at /docs; options: \`specPath\`, \`scalarConfig\`.
 - \`app.withAI({ provider, apiKey, features })\` — AI features (opt-in).
 
@@ -40,7 +42,7 @@ export const frameworkKnowledge = `
 - Method flags: \`ammo.GET\`, \`ammo.POST\`, \`ammo.PUT\`, \`ammo.DELETE\`, \`ammo.PATCH\`, \`ammo.HEAD\`, \`ammo.OPTIONS\`.
 - Request: \`ammo.payload\` (query + body + params), \`ammo.headers\`, \`ammo.method\`, \`ammo.ip\`, \`ammo.path\`, \`ammo.endpoint\`.
 - Raw: \`ammo.req\`, \`ammo.res\` (Node.js http).
-- Response: \`ammo.fire()\` (204), \`ammo.fire(data)\` (200), \`ammo.fire(status, data)\`, \`ammo.redirect(url)\`, \`ammo.notFound()\`, \`ammo.notAllowed()\`, \`ammo.unauthorized()\`, \`ammo.throw(status?, message?)\`, \`ammo.defaultEntry()\`.
+- Response: \`ammo.fire()\` (204), \`ammo.fire(data)\` (200), \`ammo.fire(status, data)\`, \`ammo.redirect(url)\`, \`ammo.notFound()\`, \`ammo.notAllowed()\`, \`ammo.unauthorized()\`, \`ammo.throw(...)\`, \`ammo.defaultEntry()\`. \`ammo.throw()\` is the **single mechanism** for error responses — you don't log and send separately; when the framework catches an error it uses the same \`ammo.throw(err)\`. When \`errors.llm.enabled\`, call with no arguments and the LLM infers from code context; optional per-call \`{ useLlm, messageType }\`. Config: \`errors.llm.messageType\`. Explicit code/message always override.
 - Handlers can be \`async\`. If no method check, handler accepts ALL methods.
 
 ## TejError
@@ -53,7 +55,7 @@ export const frameworkKnowledge = `
 - \`new TejFileUploader({ destination, name, maxFileSize })\`; \`uploader.file('key')\`, \`uploader.files('key')\`.
 
 ## Config
-- Priority: tejas.config.json < env vars < constructor. Env: nested keys → UPPER_SNAKE (e.g. \`log.http_requests\` → \`LOG_HTTP_REQUESTS\`).
+- Priority: tejas.config.json < env vars < constructor. Env: nested keys → UPPER_SNAKE (e.g. \`log.http_requests\` → \`LOG_HTTP_REQUESTS\`). \`errors.llm\`: enabled, baseURL, apiKey, model, messageType (\`"endUser"\` | \`"developer"\`); env \`ERRORS_LLM_*\` with fallback to \`LLM_*\`. Enable via config or \`app.withLLMErrors(config?)\` before takeoff. When enabled, same behaviour for explicit ammo.throw() and framework-caught errors — one mechanism.
 
 ## Project structure
 - \`*.target.js\` in \`DIR_TARGETS\` (default "targets"), recursive auto-discovery.

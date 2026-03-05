@@ -190,7 +190,7 @@ users.register('/:id', (ammo) => {
 
 ## Endpoint Metadata
 
-You can optionally pass a metadata object as the second argument to `register()`. This metadata is used by the [auto-documentation](./auto-docs.md) system to generate richer OpenAPI specs:
+You can optionally pass a metadata object as the second argument to `register()`. This metadata is used by the [auto-documentation](./auto-docs.md) system to generate richer OpenAPI specs. The **`methods`** array is also enforced by the framework: requests with a method not in the list receive 405 and an `Allow` header before the handler runs. When `methods` includes `GET`, `HEAD` is allowed automatically.
 
 ```javascript
 target.register('/users', {
@@ -208,18 +208,19 @@ target.register('/users', {
 }, (ammo) => {
   if (ammo.GET) return ammo.fire(getUsers());
   if (ammo.POST) return ammo.fire(201, createUser(ammo.payload));
-  ammo.notAllowed();
+  ammo.notAllowed('GET', 'POST');
 });
 ```
 
-When metadata is omitted, the auto-docs LLM infers everything from the handler source code.
+When metadata is omitted, the auto-docs LLM infers everything from the handler source code. For inline method restriction without metadata, use **`ammo.only('GET')`** (or multiple methods) at the start of the handler.
 
 ## Method-Agnostic Handlers
 
-If a handler does not check any method flags (`ammo.GET`, `ammo.POST`, etc.), it is treated as accepting **all HTTP methods**. This is useful for simple endpoints:
+If a handler does not check any method flags (`ammo.GET`, `ammo.POST`, etc.) and does not use declarative `methods` or `ammo.only()`, it is treated as accepting **all allowed HTTP methods** (see [Configuration](./configuration.md)#allowed-http-methods). Non-standard methods (e.g. TRACE) are rejected with 405 before route matching. For simple read-only endpoints you can restrict to GET with `ammo.only('GET')`:
 
 ```javascript
 target.register('/health', (ammo) => {
+  ammo.only('GET');
   ammo.fire({ status: 'ok' });
 });
 ```
