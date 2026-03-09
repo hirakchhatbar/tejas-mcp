@@ -59,6 +59,16 @@ app.takeoff();
 | `log.http_requests` | `LOG_HTTP_REQUESTS` | boolean | `false` | Log incoming HTTP requests (method, path, status, time) |
 | `log.exceptions` | `LOG_EXCEPTIONS` | boolean | `false` | Log unhandled exceptions and errors |
 
+### Response Structure {#response-structure}
+
+By default, Tejas wraps all success responses in `{ data: ... }` and all error responses in `{ error: ... }`. This gives clients a consistent envelope. See [Ammo — fire()](./ammo.md#fire----send-response) for examples. Disable or customize via the options below.
+
+| Config Key | Env Variable | Type | Default | Description |
+|------------|-------------|------|---------|-------------|
+| `response.envelopeEnabled` | `RESPONSE_ENVELOPE_ENABLED` | boolean | `true` | Enable response envelope: wrap success in `{ data: ... }` and errors in `{ error: ... }` |
+| `response.successKey` | `RESPONSE_SUCCESSKEY` | string | `"data"` | Key used to wrap 2xx response bodies |
+| `response.errorKey` | `RESPONSE_ERRORKEY` | string | `"error"` | Key used to wrap 4xx/5xx response bodies |
+
 ### Request Body
 
 | Config Key | Env Variable | Type | Default | Description |
@@ -118,6 +128,11 @@ Create a `tejas.config.json` in your project root:
     "http_requests": true,
     "exceptions": true
   },
+  "response": {
+    "envelopeEnabled": true,
+    "successKey": "data",
+    "errorKey": "error"
+  },
   "body": {
     "max_size": 5242880,
     "timeout": 15000
@@ -151,6 +166,11 @@ PORT=3000
 # Logging
 LOG_HTTP_REQUESTS=true
 LOG_EXCEPTIONS=true
+
+# Response envelope (default: enabled; 2xx → { data }, 4xx/5xx → { error })
+# RESPONSE_ENVELOPE_ENABLED=true
+# RESPONSE_SUCCESSKEY=data
+# RESPONSE_ERRORKEY=error
 
 # Body limits
 BODY_MAX_SIZE=5242880
