@@ -211,11 +211,29 @@ const Model = conn.model('Item', new conn.Schema({ name: String }));
 `,
 
   "error-handling": `// Zero-config: Tejas catches all errors. When errors.llm.enabled, ammo.throw() with no args — LLM infers from code context.
-import { Target, TejError } from 'te.js';
+import Tejas, { Target, TejError } from 'te.js';
+
+// -- LLM errors config (tejas.config.json or .env) --
+// Sync mode (default): blocks response until LLM returns
+// ERRORS_LLM_MODE=sync
+//
+// Async mode: responds immediately with 500, dispatches LLM result to channel in background
+// ERRORS_LLM_MODE=async
+// ERRORS_LLM_CHANNEL=both        # console | log | both
+// ERRORS_LLM_LOG_FILE=./errors.llm.log
+//
+// Usage control:
+// ERRORS_LLM_TIMEOUT=10000       # ms, abort LLM fetch after this
+// ERRORS_LLM_RATE_LIMIT=10       # max LLM calls per minute (cached results don't count)
+// ERRORS_LLM_CACHE=true          # reuse results by throw site + error message
+// ERRORS_LLM_CACHE_TTL=3600000   # 1 hour
+
+// Or programmatically:
+// app.withLLMErrors({ mode: 'async', channel: 'both', rateLimit: 20, cacheTTL: 86400000 });
 
 const target = new Target('/api');
 
-// Explicit: status and message (always override)
+// Explicit: status and message (always override — LLM not called)
 target.register('/fail', (ammo) => {
   throw new TejError(400, 'Bad request');
 });

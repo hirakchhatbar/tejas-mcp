@@ -17,6 +17,27 @@ const docsConfigSchema = z
   })
   .optional();
 
+const errorsConfigSchema = z
+  .object({
+    llm: z
+      .object({
+        enabled: z.boolean().optional(),
+        baseURL: z.string().optional(),
+        apiKey: z.string().optional(),
+        model: z.string().optional(),
+        messageType: z.enum(["endUser", "developer"]).optional(),
+        mode: z.enum(["sync", "async"]).optional(),
+        timeout: z.number().optional(),
+        channel: z.enum(["console", "log", "both"]).optional(),
+        logFile: z.string().optional(),
+        rateLimit: z.number().optional(),
+        cache: z.boolean().optional(),
+        cacheTTL: z.number().optional(),
+      })
+      .optional(),
+  })
+  .optional();
+
 const aiConfigSchema = z
   .object({
     provider: z.string().optional(),
@@ -35,6 +56,7 @@ export function registerGenerateConfig(server: McpServer): void {
       dirTargets: z.string().optional(),
       bodyMaxSize: z.number().optional(),
       docsConfig: docsConfigSchema,
+      errorsConfig: errorsConfigSchema,
       aiConfig: aiConfigSchema,
     },
     async (args) => {

@@ -102,15 +102,23 @@ These options configure the `tejas generate:docs` CLI command and the auto-docum
 
 ### Error handling (LLM-inferred errors)
 
-When [LLM-inferred error codes and messages](./error-handling.md#llm-inferred-errors) are enabled, the **`errors.llm`** block configures the LLM used when you call `ammo.throw()` without explicit code or message. The LLM infers from code context (surrounding + upstream/downstream). Unset values fall back to `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. You can also enable (and optionally set options) by calling **`app.withLLMErrors(config?)`** before `takeoff()` — e.g. `app.withLLMErrors()` or `app.withLLMErrors({ baseURL, apiKey, model, messageType })`.
+When [LLM-inferred error codes and messages](./error-handling.md#llm-inferred-errors) are enabled, the **`errors.llm`** block configures the LLM used when you call `ammo.throw()` without explicit code or message. Unset values fall back to `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. You can also enable programmatically with **`app.withLLMErrors(config?)`** before `takeoff()`.
 
 | Config Key | Env Variable | Type | Default | Description |
 |------------|-------------|------|---------|-------------|
 | `errors.llm.enabled` | `ERRORS_LLM_ENABLED` | boolean | `false` | Enable LLM-inferred error code and message for `ammo.throw()` |
-| `errors.llm.baseURL` | `ERRORS_LLM_BASE_URL` or `LLM_BASE_URL` | string | — | LLM provider endpoint for error inference |
-| `errors.llm.apiKey` | `ERRORS_LLM_API_KEY` or `LLM_API_KEY` | string | — | LLM provider API key for error inference |
-| `errors.llm.model` | `ERRORS_LLM_MODEL` or `LLM_MODEL` | string | — | LLM model for error inference |
-| `errors.llm.messageType` | `ERRORS_LLM_MESSAGE_TYPE` or `LLM_MESSAGE_TYPE` | `"endUser"` \| `"developer"` | `"endUser"` | Default tone for LLM-generated message: `endUser` (safe for clients) or `developer` (technical). Overridable per `ammo.throw()` call. |
+| `errors.llm.baseURL` | `ERRORS_LLM_BASE_URL` or `LLM_BASE_URL` | string | — | LLM provider endpoint. Required when enabled. |
+| `errors.llm.apiKey` | `ERRORS_LLM_API_KEY` or `LLM_API_KEY` | string | — | LLM provider API key. Required when enabled. |
+| `errors.llm.model` | `ERRORS_LLM_MODEL` or `LLM_MODEL` | string | — | LLM model name. Required when enabled. |
+| `errors.llm.messageType` | `ERRORS_LLM_MESSAGE_TYPE` or `LLM_MESSAGE_TYPE` | `"endUser"` \| `"developer"` | `"endUser"` | Default tone for LLM-generated message. Overridable per `ammo.throw()` call. |
+| `errors.llm.mode` | `ERRORS_LLM_MODE` | `"sync"` \| `"async"` | `"sync"` | `sync` blocks the response until LLM returns. `async` responds immediately with 500 and dispatches the LLM result to a channel in the background. |
+| `errors.llm.timeout` | `ERRORS_LLM_TIMEOUT` or `LLM_TIMEOUT` | number (ms) | `10000` | Fetch timeout for LLM requests. |
+| `errors.llm.channel` | `ERRORS_LLM_CHANNEL` or `LLM_CHANNEL` | `"console"` \| `"log"` \| `"both"` | `"console"` | Output channel for async mode results. Only applies when `mode` is `"async"`. |
+| `errors.llm.logFile` | `ERRORS_LLM_LOG_FILE` | string (path) | `"./errors.llm.log"` | Path to JSONL log file for `log` and `both` channels. |
+| `errors.llm.rateLimit` | `ERRORS_LLM_RATE_LIMIT` or `LLM_RATE_LIMIT` | number | `10` | Max LLM calls per minute. Cached results do not count against this limit. |
+| `errors.llm.cache` | `ERRORS_LLM_CACHE` | boolean | `true` | Cache LLM results by throw site (file + line) and error message to avoid repeated calls. |
+| `errors.llm.cacheTTL` | `ERRORS_LLM_CACHE_TTL` | number (ms) | `3600000` | How long cached results are reused (default 1 hour). |
+
 When enabled, the same behaviour applies whether you call `ammo.throw()` or the framework calls it when it catches an error — one mechanism, no separate config.
 
 ## Configuration File
@@ -149,7 +157,14 @@ Create a `tejas.config.json` in your project root:
       "enabled": true,
       "baseURL": "https://api.openai.com/v1",
       "model": "gpt-4o-mini",
-      "messageType": "endUser"
+      "messageType": "endUser",
+      "mode": "async",
+      "timeout": 10000,
+      "channel": "both",
+      "logFile": "./errors.llm.log",
+      "rateLimit": 10,
+      "cache": true,
+      "cacheTTL": 3600000
     }
   }
 }

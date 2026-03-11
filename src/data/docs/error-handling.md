@@ -90,6 +90,48 @@ ammo.throw({ messageType: 'developer' });
 ammo.throw(caughtErr, { useLlm: false });
 ```
 
+### Async mode
+
+By default (`errors.llm.mode: 'sync'`), `ammo.throw()` blocks the HTTP response until the LLM returns. Set `mode` to `'async'` to respond immediately with a generic `500` and run the LLM in the background, dispatching the result to the configured channel.
+
+```bash
+ERRORS_LLM_MODE=async
+ERRORS_LLM_CHANNEL=both   # console | log | both
+```
+
+In async mode, `devInsight` is always included in channel output (even in production) since it never reaches the HTTP response.
+
+### Output channels (async mode)
+
+| Channel | Output |
+|---------|--------|
+| `"console"` (default) | Pretty-printed colored block in the terminal with timestamp, method+path, inferred status, message, dev insight. Shows `[CACHED]` / `[RATE LIMITED]` flags. |
+| `"log"` | JSONL file (one JSON object per line). Path from `errors.llm.logFile` (default `./errors.llm.log`). All fields: timestamp, method, path, statusCode, message, devInsight, error, codeContext, cached, rateLimited. |
+| `"both"` | Both console and log file. |
+
+### Rate limiting
+
+Set `errors.llm.rateLimit` (default `10`) to cap LLM calls per minute across all requests.
+
+- **Sync mode**: responds `500` when limit is exceeded.
+- **Async mode**: channel still receives a dispatch with `rateLimited: true` so the occurrence is recorded.
+- Cached results do **not** count against the rate limit.
+
+```bash
+ERRORS_LLM_RATE_LIMIT=20
+```
+
+### Error caching
+
+By default (`errors.llm.cache: true`), results are cached by throw site (file + line) and error message. Repeated errors reuse the cached result without calling the LLM again.
+
+```bash
+ERRORS_LLM_CACHE=true
+ERRORS_LLM_CACHE_TTL=3600000   # 1 hour (default)
+```
+
+To only enhance new (unique) errors, keep caching enabled with a long TTL.
+
 ---
 
 ## TejError Class

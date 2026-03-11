@@ -8,7 +8,7 @@ export const frameworkKnowledge = `
 ## Identity
 - Tejas is the **AI-native Node.js framework**. It uses AI internally to make the framework smarter (LLM-powered auto-docs, future: intelligent errors, semantic routing, AI alerting/monitoring). It is NOT a wrapper for LLM API calls; the framework itself is AI-powered.
 - Shipped AI: LLM-powered auto-documentation (\`tejas generate:docs\`), MCP server for IDE assistants.
-- Shipped AI: LLM-inferred errors — \`ammo.throw()\` with no args; LLM infers status/message from code context (surrounding + upstream/downstream). Enable via config \`errors.llm.enabled\` or \`app.withLLMErrors(config?)\` before takeoff. Config: \`errors.llm.messageType\` (\`"endUser"\` | \`"developer"\`), per-call \`{ useLlm, messageType }\`.
+- Shipped AI: LLM-inferred errors — \`ammo.throw()\` with no args; LLM infers status/message from code context (surrounding + upstream/downstream). Enable via config \`errors.llm.enabled\` or \`app.withLLMErrors(config?)\` before takeoff. Key config: \`messageType\` (\`"endUser"\` | \`"developer"\`); \`mode\` (\`"sync"\` blocks response, \`"async"\` fires 500 immediately and dispatches LLM result to a channel); \`channel\` (\`"console"\` | \`"log"\` | \`"both"\`, async mode only); \`logFile\` (path for JSONL log, default \`"./errors.llm.log"\`); \`timeout\` (ms, default 10000); \`rateLimit\` (max LLM calls/min, default 10); \`cache\` (bool, default true — dedup by file+line+errorMessage); \`cacheTTL\` (ms, default 3600000). Cached results bypass rate limit. Per-call: \`{ useLlm, messageType }\`.
 - Roadmap AI: semantic routing, natural language config, smart validation, AI-driven alerting/monitoring/analytics, anomaly detection, auto-remediation.
 - AI provider: \`app.withAI({ provider, apiKey, features })\` — opt-in, pluggable (OpenAI, Anthropic, Ollama), privacy-safe.
 
@@ -29,7 +29,7 @@ export const frameworkKnowledge = `
 - \`app.takeoff(options)\` — start server; options: \`{ withRedis, withMongo }\`.
 - \`app.withRateLimit(options)\` — rate limiting.
 - \`app.withRedis(config)\` / \`app.withMongo(config)\` — DB connections.
-- \`app.withLLMErrors(config?)\` — enable LLM-inferred errors; optional \`{ baseURL, apiKey, model, messageType }\`. Call before takeoff.
+- \`app.withLLMErrors(config?)\` — enable LLM-inferred errors; optional \`{ baseURL, apiKey, model, messageType, mode, timeout, channel, logFile, rateLimit, cache, cacheTTL }\`. Call before takeoff.
 - \`app.serveDocs(options)\` — Scalar UI at /docs; options: \`specPath\`, \`scalarConfig\`.
 - \`app.withAI({ provider, apiKey, features })\` — AI features (opt-in).
 
@@ -55,7 +55,7 @@ export const frameworkKnowledge = `
 - \`new TejFileUploader({ destination, name, maxFileSize })\`; \`uploader.file('key')\`, \`uploader.files('key')\`.
 
 ## Config
-- Priority: tejas.config.json < env vars < constructor. Env: nested keys → UPPER_SNAKE (e.g. \`log.http_requests\` → \`LOG_HTTP_REQUESTS\`). \`errors.llm\`: enabled, baseURL, apiKey, model, messageType (\`"endUser"\` | \`"developer"\`); env \`ERRORS_LLM_*\` with fallback to \`LLM_*\`. Enable via config or \`app.withLLMErrors(config?)\` before takeoff. When enabled, same behaviour for explicit ammo.throw() and framework-caught errors — one mechanism.
+- Priority: tejas.config.json < env vars < constructor. Env: nested keys → UPPER_SNAKE (e.g. \`log.http_requests\` → \`LOG_HTTP_REQUESTS\`). \`errors.llm\`: enabled, baseURL, apiKey, model, messageType, mode, timeout, channel, logFile, rateLimit, cache, cacheTTL; env \`ERRORS_LLM_*\` with fallback to \`LLM_*\` for shared keys. Enable via config or \`app.withLLMErrors(config?)\` before takeoff. When enabled, same behaviour for explicit ammo.throw() and framework-caught errors — one mechanism.
 
 ## Project structure
 - \`*.target.js\` in \`DIR_TARGETS\` (default "targets"), recursive auto-discovery.
