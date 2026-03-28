@@ -1,8 +1,6 @@
 type GenerateAppEntryArgs = {
   port?: number;
   withRateLimit: boolean;
-  withRedis: boolean;
-  withMongo: boolean;
   withDocs: boolean;
   withAI: boolean;
   globalMiddleware: string[];
@@ -30,20 +28,6 @@ export async function generateAppEntry(
     );
   }
 
-  if (args.withRedis) {
-    lines.push(
-      "app.withRedis({ url: process.env.REDIS_URL || 'redis://localhost:6379' });",
-      ""
-    );
-  }
-
-  if (args.withMongo) {
-    lines.push(
-      "app.withMongo({ uri: process.env.MONGO_URI || 'mongodb://localhost:27017/app' });",
-      ""
-    );
-  }
-
   if (args.withDocs) {
     lines.push("app.serveDocs({ specPath: './openapi.json' });", "");
   }
@@ -59,13 +43,7 @@ export async function generateAppEntry(
     );
   }
 
-  const takeoffOpts: string[] = [];
-  if (args.withRedis) takeoffOpts.push("withRedis: { url: process.env.REDIS_URL }");
-  if (args.withMongo) takeoffOpts.push("withMongo: { uri: process.env.MONGO_URI }");
-  const takeoffArg =
-    takeoffOpts.length > 0 ? `{ ${takeoffOpts.join(", ")} }` : "{}";
-
-  lines.push(`app.takeoff(${takeoffArg});`);
+  lines.push("app.takeoff();");
 
   return {
     content: [{ type: "text", text: lines.join("\n") }],

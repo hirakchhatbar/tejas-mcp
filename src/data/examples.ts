@@ -163,54 +163,7 @@ app.withRateLimit({
 app.takeoff();
 `,
 
-  "database-redis": `// index.js - Enable Redis at takeoff
-import Tejas from 'te.js';
-
-const app = new Tejas();
-
-app.takeoff({
-  withRedis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-  },
-});
-
-// targets/cache.target.js - Use Redis via a service
-import { Target, TejError } from 'te.js';
-import { getConnection } from 'te.js';
-
-const cache = new Target('/cache');
-
-cache.register('/:key', async (ammo) => {
-  if (!ammo.GET) return ammo.notAllowed();
-  const redis = getConnection('redis');
-  const value = await redis.get(ammo.payload.key);
-  if (value === null) return ammo.notFound();
-  ammo.fire({ key: ammo.payload.key, value });
-});
-
-export default cache;
-`,
-
-  "database-mongodb": `// index.js - Enable MongoDB at takeoff
-import Tejas from 'te.js';
-
-const app = new Tejas();
-
-app.takeoff({
-  withMongo: {
-    uri: process.env.MONGO_URI || 'mongodb://localhost:27017/mydb',
-  },
-});
-
-// In a target, get Mongoose connection via getConnection('mongo')
-import { getConnection } from 'te.js';
-
-const conn = getConnection('mongo');
-const Model = conn.model('Item', new conn.Schema({ name: String }));
-// Use Model.find(), Model.create(), etc.
-`,
-
-  "error-handling": `// Zero-config: Tejas catches all errors. When errors.llm.enabled, ammo.throw() with no args — LLM infers from code context.
+  "error-handling": `// Zero-config: Tejas catches all errors. When errors.llm.enabled, every ammo.throw() is enriched by the LLM.
 import Tejas, { Target, TejError } from 'te.js';
 
 // -- LLM errors config (tejas.config.json or .env) --
@@ -238,16 +191,16 @@ target.register('/fail', (ammo) => {
   throw new TejError(400, 'Bad request');
 });
 target.register('/notfound', (ammo) => ammo.notFound());
-target.register('/server-error', (ammo) => ammo.throw(500, 'Internal error'));
+target.register('/server-error', (ammo) => ammo.throw(500, 'Internal error')); // keeps 500, LLM adds devInsight
 
-// When errors.llm.enabled: no args — LLM infers from code surrounding the call (no error object required)
+// No args — LLM infers status code + message + devInsight from code context
 target.register('/users/:id', async (ammo) => {
   const user = await findUser(ammo.payload.id);
   if (!user) return ammo.throw();
   ammo.fire(user);
 });
 
-// Optional: pass caught error; LLM uses error stack for code context. Per-call options: useLlm, messageType
+// Pass caught error; LLM infers from error + code context. Opt out with { useLlm: false }
 target.register('/risky', async (ammo) => {
   try {
     const data = await riskyOp();
@@ -255,7 +208,7 @@ target.register('/risky', async (ammo) => {
   } catch (err) {
     return ammo.throw(err);
     // ammo.throw(err, { useLlm: false });
-    // ammo.throw(err, { messageType: 'developer' });
+    // ammo.throw(502, 'Known upstream issue', { useLlm: false });
   }
 });
 
@@ -279,10 +232,7 @@ app.withRateLimit({
 
 app.serveDocs({ specPath: './openapi.json' });
 
-const redisUrl = process.env.REDIS_URL;
-app.takeoff(
-  redisUrl ? { withRedis: { url: redisUrl } } : {}
-);
+app.takeoff();
 `,
 
   "express-migration": `// Use Express middleware via midair (3-arg (req, res, next) is auto-detected)
@@ -311,6 +261,10 @@ app.serveDocs({
   specPath: './openapi.json',
   scalarConfig: { theme: 'purple', layout: 'modern' },
 });
+
+// 3. Protect docs in production (optional)
+//    Set DOCS_PASSWORD env var, or pass it explicitly:
+//    app.serveDocs({ specPath: './openapi.json', password: process.env.DOCS_PASSWORD });
 
 app.takeoff();
 `,

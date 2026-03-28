@@ -8,6 +8,6 @@ declare module "te.js" {
 
   export default class Tejas {
     constructor(options?: { port?: number; log?: { http_requests?: boolean; exceptions?: boolean } });
-    takeoff(options?: { withRedis?: unknown; withMongo?: unknown }): void;
+    takeoff(): void;
   }
 }

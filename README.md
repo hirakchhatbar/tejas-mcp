@@ -5,7 +5,7 @@ MCP server for **[Tejas (te.js)](https://github.com/hirakchhatbar/te.js)** — t
 ## Features
 
 - **Tools**: `get_documentation`, `search_docs`, `get_code_example`, `generate_target`, `generate_app_entry`, `generate_config`, `scaffold_project`
-- **Resources**: 13 documentation topics at `tejas://docs/{topic}` (e.g. `tejas://docs/routing`, `tejas://docs/ammo`)
+- **Resources**: 12 documentation topics at `tejas://docs/{topic}` (e.g. `tejas://docs/routing`, `tejas://docs/ammo`)
 - **Prompts**: `tejas-expert` — system prompt to make an LLM a Tejas expert (optional `task` argument to tailor the prompt)
 
 ## Installation
@@ -103,7 +103,6 @@ npm run build
 | Ammo           | `tejas://docs/ammo` |
 | Middleware     | `tejas://docs/middleware` |
 | Error handling | `tejas://docs/error-handling` |
-| Database       | `tejas://docs/database` |
 | Rate limiting  | `tejas://docs/rate-limiting` |
 | File uploads   | `tejas://docs/file-uploads` |
 | CLI            | `tejas://docs/cli` |

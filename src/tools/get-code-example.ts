@@ -9,8 +9,6 @@ const PATTERNS = [
   "middleware-usage",
   "file-upload",
   "rate-limiting",
-  "database-redis",
-  "database-mongodb",
   "error-handling",
   "full-app",
   "express-migration",

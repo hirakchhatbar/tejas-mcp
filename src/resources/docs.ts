@@ -8,7 +8,6 @@ const DOC_TOPICS = [
   "ammo",
   "middleware",
   "error-handling",
-  "database",
   "rate-limiting",
   "file-uploads",
   "cli",

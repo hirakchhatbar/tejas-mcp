@@ -32,11 +32,11 @@ The simplest way to configure Tejas is with a `tejas.config.json` file:
 Or pass options directly to the constructor:
 
 ```javascript
-import Tejas from 'te.js';
+import Tejas from "te.js";
 
 const app = new Tejas({
   port: 3000,
-  log: { http_requests: true }
+  log: { http_requests: true },
 });
 
 app.takeoff();
@@ -46,78 +46,78 @@ app.takeoff();
 
 ### Core
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
-| `entry` | `ENTRY` | string | *(auto-resolved)* | Entry file for `tejas fly`. Falls back to `package.json` `main`, then `index.js` / `app.js` / `server.js` |
-| `port` | `PORT` | number | `1403` | Server port |
-| `dir.targets` | `DIR_TARGETS` | string | `"targets"` | Directory containing `.target.js` files for auto-discovery |
+| Config Key    | Env Variable  | Type   | Default           | Description                                                                                               |
+| ------------- | ------------- | ------ | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `entry`       | `ENTRY`       | string | _(auto-resolved)_ | Entry file for `tejas fly`. Falls back to `package.json` `main`, then `index.js` / `app.js` / `server.js` |
+| `port`        | `PORT`        | number | `1403`            | Server port                                                                                               |
+| `dir.targets` | `DIR_TARGETS` | string | `"targets"`       | Directory containing `.target.js` files for auto-discovery                                                |
 
 ### Logging
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
+| Config Key          | Env Variable        | Type    | Default | Description                                             |
+| ------------------- | ------------------- | ------- | ------- | ------------------------------------------------------- |
 | `log.http_requests` | `LOG_HTTP_REQUESTS` | boolean | `false` | Log incoming HTTP requests (method, path, status, time) |
-| `log.exceptions` | `LOG_EXCEPTIONS` | boolean | `false` | Log unhandled exceptions and errors |
+| `log.exceptions`    | `LOG_EXCEPTIONS`    | boolean | `false` | Log unhandled exceptions and errors                     |
 
 ### Response Structure {#response-structure}
 
 By default, Tejas wraps all success responses in `{ data: ... }` and all error responses in `{ error: ... }`. This gives clients a consistent envelope. See [Ammo — fire()](./ammo.md#fire----send-response) for examples. Disable or customize via the options below.
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
-| `response.envelopeEnabled` | `RESPONSE_ENVELOPE_ENABLED` | boolean | `true` | Enable response envelope: wrap success in `{ data: ... }` and errors in `{ error: ... }` |
-| `response.successKey` | `RESPONSE_SUCCESSKEY` | string | `"data"` | Key used to wrap 2xx response bodies |
-| `response.errorKey` | `RESPONSE_ERRORKEY` | string | `"error"` | Key used to wrap 4xx/5xx response bodies |
+| Config Key                 | Env Variable                | Type    | Default   | Description                                                                              |
+| -------------------------- | --------------------------- | ------- | --------- | ---------------------------------------------------------------------------------------- |
+| `response.envelopeEnabled` | `RESPONSE_ENVELOPE_ENABLED` | boolean | `true`    | Enable response envelope: wrap success in `{ data: ... }` and errors in `{ error: ... }` |
+| `response.successKey`      | `RESPONSE_SUCCESSKEY`       | string  | `"data"`  | Key used to wrap 2xx response bodies                                                     |
+| `response.errorKey`        | `RESPONSE_ERRORKEY`         | string  | `"error"` | Key used to wrap 4xx/5xx response bodies                                                 |
 
 ### Request Body
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
-| `body.max_size` | `BODY_MAX_SIZE` | number | `10485760` (10 MB) | Maximum request body size in bytes. Requests exceeding this receive a 413 error |
-| `body.timeout` | `BODY_TIMEOUT` | number | `30000` (30 s) | Body parsing timeout in milliseconds. Requests exceeding this receive a 408 error |
+| Config Key      | Env Variable    | Type   | Default            | Description                                                                       |
+| --------------- | --------------- | ------ | ------------------ | --------------------------------------------------------------------------------- |
+| `body.max_size` | `BODY_MAX_SIZE` | number | `10485760` (10 MB) | Maximum request body size in bytes. Requests exceeding this receive a 413 error   |
+| `body.timeout`  | `BODY_TIMEOUT`  | number | `30000` (30 s)     | Body parsing timeout in milliseconds. Requests exceeding this receive a 408 error |
 
 ### Allowed HTTP methods
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
+| Config Key       | Env Variable     | Type                            | Default                                        | Description                                                                                                                          |
+| ---------------- | ---------------- | ------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `allowedMethods` | `ALLOWEDMETHODS` | array or comma-separated string | `GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS` | HTTP methods allowed at the framework level. Non-standard methods (e.g. TRACE, CONNECT) are rejected with 405 before route matching. |
 
 ### Auto-Documentation
 
 These options configure the `tejas generate:docs` CLI command and the auto-documentation system. See [Auto-Documentation](./auto-docs.md) for full details.
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
-| `docs.dirTargets` | `DOCS_DIR_TARGETS` | string | `"targets"` | Target directory for doc generation (can differ from `dir.targets`) |
-| `docs.output` | — | string | `"./openapi.json"` | Output path for the generated OpenAPI spec |
-| `docs.title` | — | string | `"API"` | API title in the OpenAPI `info` block |
-| `docs.version` | — | string | `"1.0.0"` | API version in the OpenAPI `info` block |
-| `docs.description` | — | string | `""` | API description |
-| `docs.level` | — | number | `1` | LLM enhancement level (1–3). Higher = better docs, more tokens |
-| `docs.llm.baseURL` | `LLM_BASE_URL` | string | `"https://api.openai.com/v1"` | LLM provider endpoint |
-| `docs.llm.apiKey` | `LLM_API_KEY` | string | — | LLM provider API key |
-| `docs.llm.model` | `LLM_MODEL` | string | `"gpt-4o-mini"` | LLM model name |
-| `docs.overviewPath` | — | string | `"./API_OVERVIEW.md"` | Path for the generated overview page (level 3 only) |
-| `docs.productionBranch` | `DOCS_PRODUCTION_BRANCH` | string | `"main"` | Git branch that triggers `docs:on-push` |
+| Config Key              | Env Variable             | Type   | Default                       | Description                                                         |
+| ----------------------- | ------------------------ | ------ | ----------------------------- | ------------------------------------------------------------------- |
+| `docs.dirTargets`       | `DOCS_DIR_TARGETS`       | string | `"targets"`                   | Target directory for doc generation (can differ from `dir.targets`) |
+| `docs.output`           | —                        | string | `"./openapi.json"`            | Output path for the generated OpenAPI spec                          |
+| `docs.title`            | —                        | string | `"API"`                       | API title in the OpenAPI `info` block                               |
+| `docs.version`          | —                        | string | `"1.0.0"`                     | API version in the OpenAPI `info` block                             |
+| `docs.description`      | —                        | string | `""`                          | API description                                                     |
+| `docs.level`            | —                        | number | `1`                           | LLM enhancement level (1–3). Higher = better docs, more tokens      |
+| `docs.llm.baseURL`      | `LLM_BASE_URL`           | string | `"https://api.openai.com/v1"` | LLM provider endpoint                                               |
+| `docs.llm.apiKey`       | `LLM_API_KEY`            | string | —                             | LLM provider API key                                                |
+| `docs.llm.model`        | `LLM_MODEL`              | string | `"gpt-4o-mini"`               | LLM model name                                                      |
+| `docs.overviewPath`     | —                        | string | `"./API_OVERVIEW.md"`         | Path for the generated overview page (level 3 only)                 |
+| `docs.productionBranch` | `DOCS_PRODUCTION_BRANCH` | string | `"main"`                      | Git branch that triggers `docs:on-push`                             |
 
 ### Error handling (LLM-inferred errors)
 
-When [LLM-inferred error codes and messages](./error-handling.md#llm-inferred-errors) are enabled, the **`errors.llm`** block configures the LLM used when you call `ammo.throw()` without explicit code or message. Unset values fall back to `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. You can also enable programmatically with **`app.withLLMErrors(config?)`** before `takeoff()`.
+When [LLM-inferred errors](./error-handling.md#llm-inferred-errors) are enabled, the **`errors.llm`** block configures the LLM used to enrich every `ammo.throw()` call. Explicit status codes and messages are preserved; the LLM adds a `devInsight` for Tejas Radar. For bare errors the LLM also infers status code and message. Unset values fall back to `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`. You can also enable programmatically with **`app.withLLMErrors(config?)`** before `takeoff()`.
 
-| Config Key | Env Variable | Type | Default | Description |
-|------------|-------------|------|---------|-------------|
-| `errors.llm.enabled` | `ERRORS_LLM_ENABLED` | boolean | `false` | Enable LLM-inferred error code and message for `ammo.throw()` |
-| `errors.llm.baseURL` | `ERRORS_LLM_BASE_URL` or `LLM_BASE_URL` | string | — | LLM provider endpoint. Required when enabled. |
-| `errors.llm.apiKey` | `ERRORS_LLM_API_KEY` or `LLM_API_KEY` | string | — | LLM provider API key. Required when enabled. |
-| `errors.llm.model` | `ERRORS_LLM_MODEL` or `LLM_MODEL` | string | — | LLM model name. Required when enabled. |
-| `errors.llm.messageType` | `ERRORS_LLM_MESSAGE_TYPE` or `LLM_MESSAGE_TYPE` | `"endUser"` \| `"developer"` | `"endUser"` | Default tone for LLM-generated message. Overridable per `ammo.throw()` call. |
-| `errors.llm.mode` | `ERRORS_LLM_MODE` | `"sync"` \| `"async"` | `"sync"` | `sync` blocks the response until LLM returns. `async` responds immediately with 500 and dispatches the LLM result to a channel in the background. |
-| `errors.llm.timeout` | `ERRORS_LLM_TIMEOUT` or `LLM_TIMEOUT` | number (ms) | `10000` | Fetch timeout for LLM requests. |
-| `errors.llm.channel` | `ERRORS_LLM_CHANNEL` or `LLM_CHANNEL` | `"console"` \| `"log"` \| `"both"` | `"console"` | Output channel for async mode results. Only applies when `mode` is `"async"`. |
-| `errors.llm.logFile` | `ERRORS_LLM_LOG_FILE` | string (path) | `"./errors.llm.log"` | Path to JSONL log file for `log` and `both` channels. |
-| `errors.llm.rateLimit` | `ERRORS_LLM_RATE_LIMIT` or `LLM_RATE_LIMIT` | number | `10` | Max LLM calls per minute. Cached results do not count against this limit. |
-| `errors.llm.cache` | `ERRORS_LLM_CACHE` | boolean | `true` | Cache LLM results by throw site (file + line) and error message to avoid repeated calls. |
-| `errors.llm.cacheTTL` | `ERRORS_LLM_CACHE_TTL` | number (ms) | `3600000` | How long cached results are reused (default 1 hour). |
+| Config Key               | Env Variable                                    | Type                               | Default              | Description                                                                                                                                                                |
+| ------------------------ | ----------------------------------------------- | ---------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `errors.llm.enabled`     | `ERRORS_LLM_ENABLED`                            | boolean                            | `false`              | Enable LLM error enrichment for every `ammo.throw()` call                                                                                                                  |
+| `errors.llm.baseURL`     | `ERRORS_LLM_BASE_URL` or `LLM_BASE_URL`         | string                             | —                    | LLM provider endpoint. Required when enabled.                                                                                                                              |
+| `errors.llm.apiKey`      | `ERRORS_LLM_API_KEY` or `LLM_API_KEY`           | string                             | —                    | LLM provider API key. Required when enabled.                                                                                                                               |
+| `errors.llm.model`       | `ERRORS_LLM_MODEL` or `LLM_MODEL`               | string                             | —                    | LLM model name. Required when enabled.                                                                                                                                     |
+| `errors.llm.messageType` | `ERRORS_LLM_MESSAGE_TYPE` or `LLM_MESSAGE_TYPE` | `"endUser"` \| `"developer"`       | `"endUser"`          | Default tone for LLM-generated message. Overridable per `ammo.throw()` call.                                                                                               |
+| `errors.llm.mode`        | `ERRORS_LLM_MODE`                               | `"sync"` \| `"async"`              | `"sync"`             | `sync` blocks the response until LLM returns. `async` responds immediately with the resolved status code and dispatches the LLM devInsight to a channel in the background. |
+| `errors.llm.timeout`     | `ERRORS_LLM_TIMEOUT` or `LLM_TIMEOUT`           | number (ms)                        | `10000`              | Fetch timeout for LLM requests.                                                                                                                                            |
+| `errors.llm.channel`     | `ERRORS_LLM_CHANNEL` or `LLM_CHANNEL`           | `"console"` \| `"log"` \| `"both"` | `"console"`          | Output channel for async mode results. Only applies when `mode` is `"async"`.                                                                                              |
+| `errors.llm.logFile`     | `ERRORS_LLM_LOG_FILE`                           | string (path)                      | `"./errors.llm.log"` | Path to JSONL log file for `log` and `both` channels.                                                                                                                      |
+| `errors.llm.rateLimit`   | `ERRORS_LLM_RATE_LIMIT` or `LLM_RATE_LIMIT`     | number                             | `10`                 | Max LLM calls per minute. Cached results do not count against this limit.                                                                                                  |
+| `errors.llm.cache`       | `ERRORS_LLM_CACHE`                              | boolean                            | `true`               | Cache LLM results by throw site (file + line) and error message to avoid repeated calls.                                                                                   |
+| `errors.llm.cacheTTL`    | `ERRORS_LLM_CACHE_TTL`                          | number (ms)                        | `3600000`            | How long cached results are reused (default 1 hour).                                                                                                                       |
 
 When enabled, the same behaviour applies whether you call `ammo.throw()` or the framework calls it when it catches an error — one mechanism, no separate config.
 
@@ -209,18 +209,18 @@ LLM_MODEL=gpt-4o-mini
 Pass an object to `new Tejas()` using the same nested structure as `tejas.config.json`:
 
 ```javascript
-import Tejas from 'te.js';
+import Tejas from "te.js";
 
 const app = new Tejas({
   port: 3000,
   log: {
     http_requests: true,
-    exceptions: true
+    exceptions: true,
   },
   body: {
     max_size: 10 * 1024 * 1024,
-    timeout: 30000
-  }
+    timeout: 30000,
+  },
 });
 ```
 
@@ -249,12 +249,12 @@ The merge order is: config file values, then env vars override those, then const
 Use the `env()` function from `tej-env` to read any configuration value:
 
 ```javascript
-import { env } from 'tej-env';
+import { env } from "tej-env";
 
-target.register('/info', (ammo) => {
+target.register("/info", (ammo) => {
   ammo.fire({
-    port: env('PORT'),
-    maxBodySize: env('BODY_MAX_SIZE')
+    port: env("PORT"),
+    maxBodySize: env("BODY_MAX_SIZE"),
   });
 });
 ```
@@ -281,19 +281,6 @@ To change the targets directory:
   }
 }
 ```
-
-## Database Configuration
-
-Database connections are configured via `takeoff()` options, not through the config file:
-
-```javascript
-app.takeoff({
-  withRedis: { url: 'redis://localhost:6379' },
-  withMongo: { uri: 'mongodb://localhost:27017/myapp' }
-});
-```
-
-See [Database Integration](./database.md) for details.
 
 ## Next Steps
 

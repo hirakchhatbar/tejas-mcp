@@ -16,7 +16,6 @@ const TOPIC_TO_FILE: Record<string, string> = {
   ammo: "ammo.md",
   middleware: "middleware.md",
   "error-handling": "error-handling.md",
-  database: "database.md",
   "rate-limiting": "rate-limiting.md",
   "file-uploads": "file-uploads.md",
   cli: "cli.md",
@@ -28,7 +27,7 @@ export const DOC_TOPICS = Object.keys(TOPIC_TO_FILE) as string[];
 
 /**
  * Returns the full markdown content for a documentation topic.
- * @param topic - One of: docs-index, getting-started, configuration, routing, ammo, middleware, error-handling, database, rate-limiting, file-uploads, cli, auto-docs, api-reference
+ * @param topic - One of: docs-index, getting-started, configuration, routing, ammo, middleware, error-handling, rate-limiting, file-uploads, cli, auto-docs, api-reference
  */
 export function getDocContent(topic: string): string {
   const filename = TOPIC_TO_FILE[topic];

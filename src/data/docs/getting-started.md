@@ -116,7 +116,6 @@ Your application never crashes from unhandled exceptions, and clients always rec
 - [Routing](./routing.md) — Deep dive into the Target-based routing system
 - [Ammo](./ammo.md) — Master request/response handling
 - [Middleware](./middleware.md) — Global, target, and route-level middleware
-- [Database](./database.md) — Connect to MongoDB or Redis
 - [Error Handling](./error-handling.md) — Zero-config error handling
 - [CLI Reference](./cli.md) — `tejas fly` and doc generation commands
 - [Auto-Documentation](./auto-docs.md) — Generate OpenAPI specs from your code
@@ -148,10 +147,8 @@ app.withRateLimit({
   timeWindowSeconds: 60
 });
 
-// Start with optional Redis
-app.takeoff({
-  withRedis: { url: 'redis://localhost:6379' }
-});
+// Start the server
+app.takeoff();
 ```
 
 ```javascript

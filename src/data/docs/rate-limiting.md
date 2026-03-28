@@ -5,15 +5,14 @@ Tejas includes a powerful rate limiting system to protect your API from abuse. I
 ## Quick Start
 
 ```javascript
-import Tejas from 'te.js';
+import Tejas from "te.js";
 
 const app = new Tejas();
 
 app
-  .withRedis({ url: 'redis://localhost:6379' })
   .withRateLimit({
     maxRequests: 100,
-    timeWindowSeconds: 60
+    timeWindowSeconds: 60,
   })
   .takeoff();
 ```
@@ -25,35 +24,35 @@ This limits all endpoints to 100 requests per minute per IP address.
 ```javascript
 app.withRateLimit({
   // Core settings
-  maxRequests: 100,           // Maximum requests in time window
-  timeWindowSeconds: 60,      // Time window in seconds
-  
+  maxRequests: 100, // Maximum requests in time window
+  timeWindowSeconds: 60, // Time window in seconds
+
   // Algorithm selection
-  algorithm: 'sliding-window', // 'sliding-window' | 'token-bucket' | 'fixed-window'
-  
+  algorithm: "sliding-window", // 'sliding-window' | 'token-bucket' | 'fixed-window'
+
   // Storage backend
-  store: 'redis',             // 'redis' | 'memory'
-  
+  store: "memory", // 'memory' or { type: 'redis', url: '...' }
+
   // Custom key generator (defaults to IP-based)
   keyGenerator: (ammo) => ammo.ip,
-  
+
   // Algorithm-specific options
   algorithmOptions: {},
-  
+
   // Key prefix for storage keys (useful for namespacing)
-  keyPrefix: 'rl:',
-  
+  keyPrefix: "rl:",
+
   // Header format
   headerFormat: {
-    type: 'standard',         // 'standard' | 'legacy' | 'both'
-    draft7: false,            // Include RateLimit-Policy header (e.g. "100;w=60")
-    draft8: false             // Use delta-seconds for RateLimit-Reset instead of Unix timestamp
+    type: "standard", // 'standard' | 'legacy' | 'both'
+    draft7: false, // Include RateLimit-Policy header (e.g. "100;w=60")
+    draft8: false, // Use delta-seconds for RateLimit-Reset instead of Unix timestamp
   },
-  
+
   // Custom handler when rate limited
   onRateLimited: (ammo) => {
-    ammo.fire(429, { error: 'Slow down!' });
-  }
+    ammo.fire(429, { error: "Slow down!" });
+  },
 });
 ```
 
@@ -67,7 +66,7 @@ Best for smooth, accurate rate limiting. Prevents the "burst at window boundary"
 app.withRateLimit({
   maxRequests: 100,
   timeWindowSeconds: 60,
-  algorithm: 'sliding-window'
+  algorithm: "sliding-window",
 });
 ```
 
@@ -81,11 +80,11 @@ Best for APIs that allow occasional bursts while maintaining a long-term average
 app.withRateLimit({
   maxRequests: 100,
   timeWindowSeconds: 60,
-  algorithm: 'token-bucket',
+  algorithm: "token-bucket",
   algorithmOptions: {
-    refillRate: 1.67,    // Tokens per second (100/60)
-    burstSize: 150       // Maximum tokens (allows 50% burst)
-  }
+    refillRate: 1.67, // Tokens per second (100/60)
+    burstSize: 150, // Maximum tokens (allows 50% burst)
+  },
 });
 ```
 
@@ -99,10 +98,10 @@ Simplest algorithm. Good for basic use cases.
 app.withRateLimit({
   maxRequests: 100,
   timeWindowSeconds: 60,
-  algorithm: 'fixed-window',
+  algorithm: "fixed-window",
   algorithmOptions: {
-    strictWindow: true   // Align to clock boundaries
-  }
+    strictWindow: true, // Align to clock boundaries
+  },
 });
 ```
 
@@ -118,31 +117,34 @@ Good for single-server deployments:
 app.withRateLimit({
   maxRequests: 100,
   timeWindowSeconds: 60,
-  store: 'memory'
+  store: "memory",
 });
 ```
 
 **Pros:** No external dependencies, fast  
-**Cons:** Not shared between server instances
+**Cons:** Not shared between server instances — may be inaccurate in distributed deployments
+
+> **Warning:** If you run multiple server instances (e.g. behind a load balancer), each instance tracks its own counters independently. Use Redis storage below for accurate distributed rate limiting.
 
 ### Redis
 
-Required for distributed/multi-server deployments:
+For distributed / multi-instance deployments where counters must be shared:
 
 ```javascript
-app
-  .withRedis({ url: 'redis://localhost:6379' })
-  .withRateLimit({
-    maxRequests: 100,
-    timeWindowSeconds: 60,
-    store: 'redis'
-  });
+app.withRateLimit({
+  maxRequests: 100,
+  timeWindowSeconds: 60,
+  store: {
+    type: "redis",
+    url: "redis://localhost:6379",
+  },
+});
 ```
 
-**Pros:** Shared across all servers, persistent  
-**Cons:** Requires Redis server, slightly higher latency
+The `redis` npm package is auto-installed on first use if not already present. Any additional properties in the `store` object are forwarded to the node-redis `createClient` call.
 
-> **Important:** Initialize Redis with `withRedis()` before using `store: 'redis'`
+**Pros:** Shared across all server instances, persistent  
+**Cons:** Requires a Redis server, slightly higher latency
 
 ## Custom Key Generation
 
@@ -154,7 +156,7 @@ By default, rate limiting is based on client IP. Customize this:
 app.withRateLimit({
   maxRequests: 100,
   timeWindowSeconds: 60,
-  keyGenerator: (ammo) => ammo.user?.id || ammo.ip
+  keyGenerator: (ammo) => ammo.user?.id || ammo.ip,
 });
 ```
 
@@ -164,7 +166,7 @@ app.withRateLimit({
 app.withRateLimit({
   maxRequests: 1000,
   timeWindowSeconds: 60,
-  keyGenerator: (ammo) => ammo.headers['x-api-key'] || ammo.ip
+  keyGenerator: (ammo) => ammo.headers["x-api-key"] || ammo.ip,
 });
 ```
 
@@ -174,7 +176,7 @@ app.withRateLimit({
 app.withRateLimit({
   maxRequests: 100,
   timeWindowSeconds: 60,
-  keyGenerator: (ammo) => `${ammo.ip}:${ammo.endpoint}`
+  keyGenerator: (ammo) => `${ammo.ip}:${ammo.endpoint}`,
 });
 ```
 
@@ -194,7 +196,7 @@ RateLimit-Reset: 1706540400
 
 ```javascript
 app.withRateLimit({
-  headerFormat: { type: 'legacy' }
+  headerFormat: { type: "legacy" },
 });
 ```
 
@@ -208,7 +210,7 @@ X-RateLimit-Reset: 1706540400
 
 ```javascript
 app.withRateLimit({
-  headerFormat: { type: 'both' }
+  headerFormat: { type: "both" },
 });
 ```
 
@@ -216,7 +218,7 @@ app.withRateLimit({
 
 ```javascript
 app.withRateLimit({
-  headerFormat: { type: 'standard', draft7: true }
+  headerFormat: { type: "standard", draft7: true },
 });
 ```
 
@@ -236,11 +238,11 @@ app.withRateLimit({
   timeWindowSeconds: 60,
   onRateLimited: (ammo) => {
     ammo.fire(429, {
-      error: 'Rate limit exceeded',
-      message: 'Please slow down and try again later',
-      retryAfter: ammo.res.getHeader('Retry-After')
+      error: "Rate limit exceeded",
+      message: "Please slow down and try again later",
+      retryAfter: ammo.res.getHeader("Retry-After"),
     });
-  }
+  },
 });
 ```
 
@@ -249,43 +251,43 @@ app.withRateLimit({
 Apply different limits to different routes using middleware:
 
 ```javascript
-import Tejas, { Target } from 'te.js';
-import rateLimiter from 'te.js/rate-limit/index.js';
+import Tejas, { Target } from "te.js";
+import rateLimiter from "te.js/rate-limit/index.js";
 
 const app = new Tejas();
-const api = new Target('/api');
+const api = new Target("/api");
 
 // Strict limit for auth endpoints
 const authLimiter = rateLimiter({
   maxRequests: 5,
   timeWindowSeconds: 60,
-  algorithm: 'fixed-window'
+  algorithm: "fixed-window",
 });
 
 // Relaxed limit for read operations
 const readLimiter = rateLimiter({
   maxRequests: 1000,
   timeWindowSeconds: 60,
-  algorithm: 'sliding-window'
+  algorithm: "sliding-window",
 });
 
 // Apply to specific routes
-api.register('/login', authLimiter, (ammo) => {
+api.register("/login", authLimiter, (ammo) => {
   // Login logic
 });
 
-api.register('/data', readLimiter, (ammo) => {
+api.register("/data", readLimiter, (ammo) => {
   // Data retrieval
 });
 ```
 
 ## Algorithm Comparison
 
-| Algorithm | Best For | Burst Handling | Accuracy | Memory |
-|-----------|----------|----------------|----------|--------|
-| **Sliding Window** | Most APIs | Smooth | High | Medium |
-| **Token Bucket** | Burst-tolerant APIs | Allows bursts | Medium | Low |
-| **Fixed Window** | Simple cases | Poor at boundaries | Low | Low |
+| Algorithm          | Best For            | Burst Handling     | Accuracy | Memory |
+| ------------------ | ------------------- | ------------------ | -------- | ------ |
+| **Sliding Window** | Most APIs           | Smooth             | High     | Medium |
+| **Token Bucket**   | Burst-tolerant APIs | Allows bursts      | Medium   | Low    |
+| **Fixed Window**   | Simple cases        | Poor at boundaries | Low      | Low    |
 
 ## Examples
 
@@ -295,22 +297,22 @@ api.register('/data', readLimiter, (ammo) => {
 const tierLimits = {
   free: { maxRequests: 100, timeWindowSeconds: 3600 },
   pro: { maxRequests: 1000, timeWindowSeconds: 3600 },
-  enterprise: { maxRequests: 10000, timeWindowSeconds: 3600 }
+  enterprise: { maxRequests: 10000, timeWindowSeconds: 3600 },
 };
 
 app.withRateLimit({
   ...tierLimits.free, // Default to free tier
   keyGenerator: (ammo) => {
-    const tier = ammo.user?.tier || 'free';
+    const tier = ammo.user?.tier || "free";
     return `${tier}:${ammo.user?.id || ammo.ip}`;
   },
   algorithmOptions: {
     // Dynamically set limits based on tier
     getLimits: (key) => {
-      const tier = key.split(':')[0];
+      const tier = key.split(":")[0];
       return tierLimits[tier] || tierLimits.free;
-    }
-  }
+    },
+  },
 });
 ```
 
@@ -320,21 +322,20 @@ app.withRateLimit({
 // Global rate limit
 app.withRateLimit({
   maxRequests: 1000,
-  timeWindowSeconds: 60
+  timeWindowSeconds: 60,
 });
 
 // Stricter limit for expensive endpoints
 const expensiveLimiter = rateLimiter({
   maxRequests: 10,
   timeWindowSeconds: 60,
-  store: 'redis'
 });
 
-api.register('/search', expensiveLimiter, (ammo) => {
+api.register("/search", expensiveLimiter, (ammo) => {
   // Search logic
 });
 
-api.register('/export', expensiveLimiter, (ammo) => {
+api.register("/export", expensiveLimiter, (ammo) => {
   // Export logic
 });
 ```
@@ -344,11 +345,11 @@ api.register('/export', expensiveLimiter, (ammo) => {
 Check rate limit status in your handlers:
 
 ```javascript
-target.register('/status', (ammo) => {
+target.register("/status", (ammo) => {
   ammo.fire({
-    limit: ammo.res.getHeader('RateLimit-Limit'),
-    remaining: ammo.res.getHeader('RateLimit-Remaining'),
-    reset: ammo.res.getHeader('RateLimit-Reset')
+    limit: ammo.res.getHeader("RateLimit-Limit"),
+    remaining: ammo.res.getHeader("RateLimit-Remaining"),
+    reset: ammo.res.getHeader("RateLimit-Reset"),
   });
 });
 ```
@@ -358,7 +359,7 @@ target.register('/status', (ammo) => {
 Extend the `RateLimitStorage` base class to create your own storage backend:
 
 ```javascript
-import RateLimitStorage from 'te.js/rate-limit/storage/base.js';
+import RateLimitStorage from "te.js/rate-limit/storage/base.js";
 
 class PostgresStorage extends RateLimitStorage {
   async get(key) {
@@ -380,15 +381,14 @@ class PostgresStorage extends RateLimitStorage {
 }
 ```
 
-The built-in backends (`MemoryStorage` and `RedisStorage`) both extend this base class.
+The built-in `MemoryStorage` and `RedisStorage` backends both extend this base class.
 
 ## Best Practices
 
-1. **Use Redis in production** — Memory store doesn't scale across instances
+1. **Use Redis in production** — Memory store doesn't share counters across instances; use `store: { type: 'redis', url: '...' }` for distributed deployments
 2. **Set appropriate limits** — Too strict frustrates users, too lenient invites abuse
 3. **Different limits for different endpoints** — Auth endpoints need stricter limits
 4. **Include headers** — Help clients self-regulate
 5. **Provide clear error messages** — Tell users when they can retry
 6. **Consider user tiers** — Premium users may need higher limits
 7. **Monitor and adjust** — Track rate limit hits and adjust accordingly
-

@@ -3,8 +3,6 @@ import { z } from "zod";
 
 const FEATURES = [
   "rate-limiting",
-  "redis",
-  "mongodb",
   "file-uploads",
   "auto-docs",
   "ai",

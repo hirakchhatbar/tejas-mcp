@@ -8,8 +8,6 @@ export function registerGenerateAppEntry(server: McpServer): void {
     {
       port: z.number().optional(),
       withRateLimit: z.boolean().optional().default(false),
-      withRedis: z.boolean().optional().default(false),
-      withMongo: z.boolean().optional().default(false),
       withDocs: z.boolean().optional().default(false),
       withAI: z.boolean().optional().default(false),
       globalMiddleware: z.array(z.string()).optional().default([]),

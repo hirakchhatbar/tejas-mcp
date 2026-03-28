@@ -20,9 +20,9 @@ This means your application **never crashes** from unhandled exceptions, and cli
 
 ```javascript
 // ✅ No try-catch needed — Tejas handles errors automatically
-target.register('/users/:id', async (ammo) => {
-  const user = await database.findUser(ammo.payload.id);  // If this throws, Tejas catches it
-  const posts = await database.getUserPosts(user.id);      // Same here
+target.register("/users/:id", async (ammo) => {
+  const user = await database.findUser(ammo.payload.id); // If this throws, Tejas catches it
+  const posts = await database.getUserPosts(user.id); // Same here
   ammo.fire({ user, posts });
 });
 ```
@@ -31,14 +31,14 @@ Compare this to traditional frameworks where you'd need:
 
 ```javascript
 // ❌ Traditional approach requires manual error handling
-app.get('/users/:id', async (req, res) => {
+app.get("/users/:id", async (req, res) => {
   try {
     const user = await database.findUser(req.params.id);
     const posts = await database.getUserPosts(user.id);
     res.json({ user, posts });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 ```
@@ -54,12 +54,13 @@ To see caught exceptions in your logs, enable exception logging:
 ```javascript
 const app = new Tejas({
   log: {
-    exceptions: true  // Log all caught exceptions
-  }
+    exceptions: true, // Log all caught exceptions
+  },
 });
 ```
 
 Or via environment variable:
+
 ```bash
 LOG_EXCEPTIONS=true
 ```
@@ -68,31 +69,33 @@ LOG_EXCEPTIONS=true
 
 ## LLM-Inferred Errors
 
-When **`errors.llm.enabled`** is true and you call `ammo.throw()` without an explicit status code or message, Tejas uses an LLM to infer status and message from **code context** — the source code surrounding the call (with line numbers) and all upstream (callers) and downstream (code that would run next) context. You do not pass an error object; the LLM infers from control flow and intent.
+When **`errors.llm.enabled`** is true, Tejas uses an LLM to enrich **every** `ammo.throw()` call with a `devInsight` — a developer-facing diagnostic hint surfaced in Tejas Radar. Explicit status codes and messages are always preserved; the LLM only adds insight. For bare Error objects and no-arg throws, the LLM also infers the HTTP status code and message from **code context** — the source code surrounding the call (with line numbers) and all upstream/downstream context.
 
-- **No error object required:** Call `ammo.throw()` with no arguments (or only options). The framework captures the code around the call site and upstream stack and sends it to the LLM.
+- **Every throw is enriched:** When enabled, every `ammo.throw()` call — with or without explicit arguments — is analyzed by the LLM to produce a `devInsight` for Tejas Radar.
+- **Explicit codes preserved:** When you pass a status code or message (e.g. `ammo.throw(404, 'User not found')`), those values are always used for the HTTP response. The LLM only adds diagnostic insight.
+- **Full inference for bare errors:** Call `ammo.throw()` with no arguments or a bare Error and the LLM infers status code, message, and devInsight from code context.
 - **Opt-in:** Enable via config: `errors.llm.enabled: true` and configure `errors.llm` (baseURL, apiKey, model), or call **`app.withLLMErrors()`** / **`app.withLLMErrors({ baseURL, apiKey, model, messageType })`** before `takeoff()`. See [Configuration](./configuration.md).
 - **Framework-caught errors:** When the framework catches an unhandled error, it uses the same `ammo.throw(err)` — so the same `errors.llm` config applies. No separate "log then send response"; one mechanism handles everything.
 - **Message type:** Set `errors.llm.messageType` to `"endUser"` (default) or `"developer"` for end-user-friendly vs developer-friendly messages. Override per call (see Per-call overrides below).
-- **Override:** Whenever you pass a status code or message (e.g. `ammo.throw(404, 'User not found')`), that value is used; the LLM is not called.
 - **Non-production:** In non-production, the LLM can also provide developer insight (e.g. bug vs environment, suggested fix), attached to the response as `_dev` or in logs only — never in production.
 
 ### Per-call overrides
 
-For any LLM-eligible `ammo.throw()` call, pass an options object as the last argument:
+For any `ammo.throw()` call, pass an options object as the last argument. This works with every throw signature, including explicit status codes:
 
-- **`useLlm`** (boolean): Set to `false` to skip the LLM for this call (default 500). Set to `true` to use the LLM (default when eligible).
+- **`useLlm`** (boolean): Set to `false` to skip the LLM for this specific call.
 - **`messageType`** (`"endUser"` | `"developer"`): Override the configured default for this call only.
 
 ```javascript
 ammo.throw({ useLlm: false });
-ammo.throw({ messageType: 'developer' });
+ammo.throw({ messageType: "developer" });
 ammo.throw(caughtErr, { useLlm: false });
+ammo.throw(502, "Known issue", { useLlm: false });
 ```
 
 ### Async mode
 
-By default (`errors.llm.mode: 'sync'`), `ammo.throw()` blocks the HTTP response until the LLM returns. Set `mode` to `'async'` to respond immediately with a generic `500` and run the LLM in the background, dispatching the result to the configured channel.
+By default (`errors.llm.mode: 'sync'`), `ammo.throw()` blocks the HTTP response until the LLM returns. Set `mode` to `'async'` to respond immediately with the resolved status code and message and run the LLM in the background, dispatching the devInsight to the configured channel.
 
 ```bash
 ERRORS_LLM_MODE=async
@@ -103,11 +106,11 @@ In async mode, `devInsight` is always included in channel output (even in produc
 
 ### Output channels (async mode)
 
-| Channel | Output |
-|---------|--------|
-| `"console"` (default) | Pretty-printed colored block in the terminal with timestamp, method+path, inferred status, message, dev insight. Shows `[CACHED]` / `[RATE LIMITED]` flags. |
-| `"log"` | JSONL file (one JSON object per line). Path from `errors.llm.logFile` (default `./errors.llm.log`). All fields: timestamp, method, path, statusCode, message, devInsight, error, codeContext, cached, rateLimited. |
-| `"both"` | Both console and log file. |
+| Channel               | Output                                                                                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `"console"` (default) | Pretty-printed colored block in the terminal with timestamp, method+path, inferred status, message, dev insight. Shows `[CACHED]` / `[RATE LIMITED]` flags.                                                        |
+| `"log"`               | JSONL file (one JSON object per line). Path from `errors.llm.logFile` (default `./errors.llm.log`). All fields: timestamp, method, path, statusCode, message, devInsight, error, codeContext, cached, rateLimited. |
+| `"both"`              | Both console and log file.                                                                                                                                                                                         |
 
 ### Rate limiting
 
@@ -139,16 +142,16 @@ To only enhance new (unique) errors, keep caching enabled with a long TTL.
 Use `TejError` for throwing HTTP errors with status codes:
 
 ```javascript
-import { TejError } from 'te.js';
+import { TejError } from "te.js";
 
 // Throw a 404 error
-throw new TejError(404, 'User not found');
+throw new TejError(404, "User not found");
 
 // Throw a 400 error
-throw new TejError(400, 'Invalid email format');
+throw new TejError(400, "Invalid email format");
 
 // Throw a 500 error
-throw new TejError(500, 'Database connection failed');
+throw new TejError(500, "Database connection failed");
 ```
 
 ## Error Response
@@ -156,10 +159,11 @@ throw new TejError(500, 'Database connection failed');
 When an error is thrown, Tejas automatically sends the appropriate HTTP response:
 
 ```javascript
-throw new TejError(404, 'Resource not found');
+throw new TejError(404, "Resource not found");
 ```
 
 **Response:**
+
 ```
 HTTP/1.1 404 Not Found
 Content-Type: text/plain
@@ -195,12 +199,12 @@ ammo.throw(caughtErr);
 
 // Explicit: status code and/or message (always override)
 ammo.throw(404);
-ammo.throw(404, 'User not found');
-ammo.throw(new TejError(400, 'Bad request'));
+ammo.throw(404, "User not found");
+ammo.throw(new TejError(400, "Bad request"));
 
 // Per-call options
 ammo.throw({ useLlm: false });
-ammo.throw({ messageType: 'developer' });
+ammo.throw({ messageType: "developer" });
 ```
 
 ## Error Handling in Routes
@@ -208,15 +212,15 @@ ammo.throw({ messageType: 'developer' });
 ### Basic Pattern
 
 ```javascript
-target.register('/users/:id', async (ammo) => {
+target.register("/users/:id", async (ammo) => {
   const { id } = ammo.payload;
-  
+
   const user = await findUser(id);
-  
+
   if (!user) {
-    throw new TejError(404, 'User not found');
+    throw new TejError(404, "User not found");
   }
-  
+
   ammo.fire(user);
 });
 ```
@@ -224,15 +228,15 @@ target.register('/users/:id', async (ammo) => {
 ### Try-Catch Pattern
 
 ```javascript
-target.register('/data', async (ammo) => {
+target.register("/data", async (ammo) => {
   try {
     const data = await riskyOperation();
     ammo.fire(data);
   } catch (error) {
-    if (error.code === 'TIMEOUT') {
-      throw new TejError(504, 'Gateway timeout');
+    if (error.code === "TIMEOUT") {
+      throw new TejError(504, "Gateway timeout");
     }
-    throw new TejError(500, 'Internal server error');
+    throw new TejError(500, "Internal server error");
   }
 });
 ```
@@ -244,8 +248,8 @@ Errors are automatically caught by Tejas's handler. Enable logging:
 ```javascript
 const app = new Tejas({
   log: {
-    exceptions: true // Log all exceptions
-  }
+    exceptions: true, // Log all exceptions
+  },
 });
 ```
 
@@ -257,18 +261,18 @@ Create middleware to customize error handling:
 // middleware/error-handler.js
 export const errorHandler = (ammo, next) => {
   const originalThrow = ammo.throw.bind(ammo);
-  
+
   ammo.throw = (...args) => {
     // Log errors
-    console.error('Error:', args);
-    
+    console.error("Error:", args);
+
     // Send to error tracking service
     errorTracker.capture(args[0]);
-    
+
     // Call original throw
     originalThrow(...args);
   };
-  
+
   next();
 };
 
@@ -284,13 +288,13 @@ For APIs, return structured error objects:
 // middleware/api-errors.js
 export const apiErrorHandler = (ammo, next) => {
   const originalThrow = ammo.throw.bind(ammo);
-  
+
   ammo.throw = (statusOrError, message) => {
     let status = 500;
-    let errorMessage = 'Internal Server Error';
-    let errorCode = 'INTERNAL_ERROR';
-    
-    if (typeof statusOrError === 'number') {
+    let errorMessage = "Internal Server Error";
+    let errorCode = "INTERNAL_ERROR";
+
+    if (typeof statusOrError === "number") {
       status = statusOrError;
       errorMessage = message || getDefaultMessage(status);
       errorCode = getErrorCode(status);
@@ -299,47 +303,48 @@ export const apiErrorHandler = (ammo, next) => {
       errorMessage = statusOrError.message;
       errorCode = getErrorCode(status);
     }
-    
+
     ammo.fire(status, {
       error: {
         code: errorCode,
         message: errorMessage,
-        status
-      }
+        status,
+      },
     });
   };
-  
+
   next();
 };
 
 function getDefaultMessage(status) {
   const messages = {
-    400: 'Bad Request',
-    401: 'Unauthorized',
-    403: 'Forbidden',
-    404: 'Not Found',
-    405: 'Method Not Allowed',
-    429: 'Too Many Requests',
-    500: 'Internal Server Error'
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    429: "Too Many Requests",
+    500: "Internal Server Error",
   };
-  return messages[status] || 'Unknown Error';
+  return messages[status] || "Unknown Error";
 }
 
 function getErrorCode(status) {
   const codes = {
-    400: 'BAD_REQUEST',
-    401: 'UNAUTHORIZED',
-    403: 'FORBIDDEN',
-    404: 'NOT_FOUND',
-    405: 'METHOD_NOT_ALLOWED',
-    429: 'RATE_LIMITED',
-    500: 'INTERNAL_ERROR'
+    400: "BAD_REQUEST",
+    401: "UNAUTHORIZED",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    405: "METHOD_NOT_ALLOWED",
+    429: "RATE_LIMITED",
+    500: "INTERNAL_ERROR",
   };
-  return codes[status] || 'UNKNOWN_ERROR';
+  return codes[status] || "UNKNOWN_ERROR";
 }
 ```
 
 **Response:**
+
 ```json
 {
   "error": {
@@ -355,31 +360,31 @@ function getErrorCode(status) {
 For input validation, return detailed errors:
 
 ```javascript
-target.register('/users', (ammo) => {
+target.register("/users", (ammo) => {
   if (!ammo.POST) return ammo.notAllowed();
-  
+
   const { name, email, age } = ammo.payload;
   const errors = [];
-  
-  if (!name) errors.push({ field: 'name', message: 'Name is required' });
-  if (!email) errors.push({ field: 'email', message: 'Email is required' });
+
+  if (!name) errors.push({ field: "name", message: "Name is required" });
+  if (!email) errors.push({ field: "email", message: "Email is required" });
   if (email && !isValidEmail(email)) {
-    errors.push({ field: 'email', message: 'Invalid email format' });
+    errors.push({ field: "email", message: "Invalid email format" });
   }
   if (age && (isNaN(age) || age < 0)) {
-    errors.push({ field: 'age', message: 'Age must be a positive number' });
+    errors.push({ field: "age", message: "Age must be a positive number" });
   }
-  
+
   if (errors.length > 0) {
     return ammo.fire(400, {
       error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Validation failed',
-        details: errors
-      }
+        code: "VALIDATION_ERROR",
+        message: "Validation failed",
+        details: errors,
+      },
     });
   }
-  
+
   // Process valid data...
 });
 ```
@@ -390,13 +395,13 @@ Tejas automatically catches errors in **both sync and async handlers** — inclu
 
 ```javascript
 // ✅ No try-catch needed — errors are caught automatically
-target.register('/async', async (ammo) => {
+target.register("/async", async (ammo) => {
   const data = await fetchData(); // If this throws, Tejas catches it
   ammo.fire(data);
 });
 
 // ✅ Multiple await calls? Still no try-catch needed
-target.register('/complex', async (ammo) => {
+target.register("/complex", async (ammo) => {
   const user = await getUser(ammo.payload.id);
   const profile = await getProfile(user.profileId);
   const settings = await getSettings(user.id);
@@ -404,13 +409,13 @@ target.register('/complex', async (ammo) => {
 });
 
 // 🔧 Use try-catch ONLY when you need custom error handling
-target.register('/async-custom', async (ammo) => {
+target.register("/async-custom", async (ammo) => {
   try {
     const data = await fetchData();
     ammo.fire(data);
   } catch (error) {
-    if (error.code === 'ECONNREFUSED') {
-      throw new TejError(503, 'Service temporarily unavailable');
+    if (error.code === "ECONNREFUSED") {
+      throw new TejError(503, "Service temporarily unavailable");
     }
     throw error; // Re-throw unknown errors (Tejas will still catch it)
   }
@@ -430,16 +435,17 @@ While Tejas catches all errors automatically, you may want try-catch for:
 
 `BodyParserError` is a subclass of `TejError` thrown automatically during request body parsing. You do not need to handle these yourself — they are caught by the framework and converted to appropriate HTTP responses.
 
-| Status | Condition |
-|--------|-----------|
+| Status  | Condition                                                                  |
+| ------- | -------------------------------------------------------------------------- |
 | **400** | Malformed JSON, invalid URL-encoded data, or corrupted multipart form data |
-| **408** | Body parsing timed out (exceeds `body.timeout`, default 30 seconds) |
-| **413** | Request body exceeds `body.max_size` (default 10 MB) |
-| **415** | Unsupported content type (not JSON, URL-encoded, or multipart) |
+| **408** | Body parsing timed out (exceeds `body.timeout`, default 30 seconds)        |
+| **413** | Request body exceeds `body.max_size` (default 10 MB)                       |
+| **415** | Unsupported content type (not JSON, URL-encoded, or multipart)             |
 
 These limits are configured via [Configuration](./configuration.md) (`body.max_size`, `body.timeout`).
 
 Supported content types:
+
 - `application/json`
 - `application/x-www-form-urlencoded`
 - `multipart/form-data`
@@ -461,21 +467,21 @@ Once a response has been sent (`res.headersSent` is true), no further middleware
 
 ## Error Codes Reference
 
-| Status | Name | When to Use |
-|--------|------|-------------|
-| 400 | Bad Request | Invalid input, malformed request |
-| 401 | Unauthorized | Missing or invalid authentication |
-| 403 | Forbidden | Authenticated but not authorized |
-| 404 | Not Found | Resource doesn't exist |
-| 405 | Method Not Allowed | HTTP method not supported |
-| 409 | Conflict | Resource conflict (duplicate) |
-| 413 | Payload Too Large | Request body too large |
-| 422 | Unprocessable Entity | Valid syntax but semantic errors |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | Unexpected server errors |
-| 502 | Bad Gateway | Upstream server error |
-| 503 | Service Unavailable | Server temporarily unavailable |
-| 504 | Gateway Timeout | Upstream server timeout |
+| Status | Name                  | When to Use                       |
+| ------ | --------------------- | --------------------------------- |
+| 400    | Bad Request           | Invalid input, malformed request  |
+| 401    | Unauthorized          | Missing or invalid authentication |
+| 403    | Forbidden             | Authenticated but not authorized  |
+| 404    | Not Found             | Resource doesn't exist            |
+| 405    | Method Not Allowed    | HTTP method not supported         |
+| 409    | Conflict              | Resource conflict (duplicate)     |
+| 413    | Payload Too Large     | Request body too large            |
+| 422    | Unprocessable Entity  | Valid syntax but semantic errors  |
+| 429    | Too Many Requests     | Rate limit exceeded               |
+| 500    | Internal Server Error | Unexpected server errors          |
+| 502    | Bad Gateway           | Upstream server error             |
+| 503    | Service Unavailable   | Server temporarily unavailable    |
+| 504    | Gateway Timeout       | Upstream server timeout           |
 
 ## Best Practices
 
@@ -486,4 +492,3 @@ Once a response has been sent (`res.headersSent` is true), no further middleware
 5. **Be consistent** — Use the same error format throughout your API
 6. **Validate early** — Check input before processing
 7. **Use TejError** — For HTTP-specific errors with status codes
-
